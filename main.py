@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
-
+import logging
 
 # ================== ENV VARIABLES ==================
 load_dotenv()
@@ -22,8 +22,16 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./db.sqlite3")
 FETCH_QUERY_PATH = os.environ.get("FETCH_QUERY_PATH", "queries/fetch.sql")
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 30))
 POST_API_KEY = os.environ.get("POST_API_KEY", "supersecretkey")
+DEBUG = os.environ.get("DEBUG", False)
 # ===================================================
 
+
+# ================== LOGGING =========================
+if DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+
+# ===================================================
 
 # ================== DATABASE SETUP ==================
 engine = create_engine(DATABASE_URL)
@@ -74,25 +82,26 @@ def fetch_helper(start_time: datetime, end_time: datetime):
     """
     Fetch data based on start_time and end_time.
     """
-    print(f"Fetching data from {start_time} to {end_time}")
+    logging.info(f"Fetching data from {start_time} to {end_time}")
     sql_query = _get_fetch_query()
     query = text(sql_query)
     with get_db() as session:
         try:
-            result = session.execute(query, {"start_time": start_time, "end_time": end_time})
+            result = session.execute(
+                query, {"start_time": start_time, "end_time": end_time}
+            )
             rows = result.fetchall()
             column_names = result.keys()
             df = pd.DataFrame(rows, columns=column_names)
-            print(df.head())
+            logging.info(df.head())
             json_result = df.to_json(orient="records")
             return json.loads(json_result)
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
 
 
 def _group_data_by_sensor(data):
     grouped_data = defaultdict(list)
-
     for entry in data:
         sensor = entry["sensor_id"]
         timestamp = (
@@ -101,9 +110,7 @@ def _group_data_by_sensor(data):
             else entry["timestamp"]
         )
         value = entry["value"]
-
         grouped_data[sensor].append({"timestamp": timestamp, "value": value})
-
     return dict(grouped_data)
 
 
@@ -121,7 +128,7 @@ def post_data(start_time: datetime, end_time: datetime, sensor_data):
     response = requests.post(POST_ENDPOINT_URL, json=payload, headers=headers)
     response.raise_for_status()
     message = {"status": "success", "message": "Data posted successfully"}
-    print(message)
+    logging.info(message)
     return message
 
 
@@ -146,7 +153,7 @@ def main():
                     }
                 )
     else:
-        print(
+        logging.info(
             f"Skipping data fetch and push as the last push was within the last {BATCH_SIZE} minutes."
         )
 
