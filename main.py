@@ -76,11 +76,10 @@ def fetch_helper(start_time: datetime, end_time: datetime):
     """
     print(f"Fetching data from {start_time} to {end_time}")
     sql_query = _get_fetch_query()
-    query = text(sql_query).bindparams(start_time=start_time, end_time=end_time)
-
+    query = text(sql_query)
     with get_db() as session:
         try:
-            result = session.execute(query)
+            result = session.execute(query, {"start_time": start_time, "end_time": end_time})
             rows = result.fetchall()
             column_names = result.keys()
             df = pd.DataFrame(rows, columns=column_names)
@@ -141,7 +140,7 @@ def main():
                 update_config(
                     {
                         "last_push": {
-                            "batch_time": current_time.isoformat(),
+                            "batch_time": end_time.isoformat(),
                             "run_time": current_time.isoformat(),
                         }
                     }
