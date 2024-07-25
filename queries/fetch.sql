@@ -1,4 +1,4 @@
-SELECT tagName AS sensor_id, timestamp, value,
+SELECT tagName AS sensor_id, timestamp, value
 FROM ctc_config.dbo.ctc_fn_PARCdata_ReadRawTags(
     'CMC.Foxia.100_E21:TI195.PNT,
     CMC.Foxia.100_H1:FI126.PNT,
@@ -68,8 +68,8 @@ FROM ctc_config.dbo.ctc_fn_PARCdata_ReadRawTags(
     CMC.Foxia.700_V115:AI210.PNT,
     CMC.Foxia.800_V30:FI441.PNT,
     CMC.Foxia.DCS:ABITEMP.PNT',
-    :start, 
-    :end,
+    :start_time, 
+    :end_time,
     1, 
     ','
 ) AS ctc_fn_PARCdata_ReadRawTags_1
