@@ -31,8 +31,8 @@ LOG_DIR = os.environ.get("LOG_DIR", "./logs")
 if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-def setup_logging(start_time, end_time):
-    log_filename = f"turbodc-{start_time}-{end_time}.log"
+def setup_logging():
+    log_filename = f"turbodc.log"
     log_filepath = os.path.join(LOG_DIR, log_filename)
 
     logging.basicConfig(
@@ -153,7 +153,7 @@ def main():
     start_time = datetime.fromisoformat(last_push_time)
     end_time = start_time + timedelta(minutes=BATCH_SIZE)
 
-    setup_logging(start_time.isoformat(), end_time.isoformat())
+    setup_logging()
 
     if end_time < current_time:
         data = fetch_helper(start_time, end_time)
