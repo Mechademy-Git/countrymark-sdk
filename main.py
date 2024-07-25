@@ -23,13 +23,26 @@ FETCH_QUERY_PATH = os.environ.get("FETCH_QUERY_PATH", "queries/fetch.sql")
 BATCH_SIZE = int(os.environ.get("BATCH_SIZE", 30))
 POST_API_KEY = os.environ.get("POST_API_KEY", "supersecretkey")
 DEBUG = os.environ.get("DEBUG", False)
+LOG_DIR = os.environ.get("LOG_DIR", "./logs")
 # ===================================================
 
 
 # ================== LOGGING =========================
-if DEBUG:
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+
+def setup_logging(start_time, end_time):
+    log_filename = f"turbodc-{start_time}-{end_time}.log"
+    log_filepath = os.path.join(LOG_DIR, log_filename)
+
+    logging.basicConfig(
+        level=logging.DEBUG if DEBUG else logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_filepath),
+            logging.StreamHandler()
+        ]
+    )
 
 # ===================================================
 
@@ -139,6 +152,9 @@ def main():
 
     start_time = datetime.fromisoformat(last_push_time)
     end_time = start_time + timedelta(minutes=BATCH_SIZE)
+
+    setup_logging(start_time.isoformat(), end_time.isoformat())
+
     if end_time < current_time:
         data = fetch_helper(start_time, end_time)
         if data:
